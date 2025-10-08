@@ -8,6 +8,8 @@ import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 
 import { Center } from '@/components/ui/center';
+import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { THEME } from '@/lib/theme';
 import { fetchApprovedStickers, type Sticker } from '@/features/stickers/api';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
