@@ -9,28 +9,77 @@ type SupabaseGlobal = typeof globalThis & {
 
 const globalForSupabase = globalThis as SupabaseGlobal;
 
-const rawUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').trim();
-const rawKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+const SUPABASE_URL_ENV_KEYS = [
+  'EXPO_PUBLIC_SUPABASE_URL',
+  'SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'PUBLIC_SUPABASE_URL',
+] as const;
+
+const SUPABASE_ANON_KEY_ENV_KEYS = [
+  'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_ANON_KEY',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'PUBLIC_SUPABASE_ANON_KEY',
+] as const;
+
+type EnvLookupResult = {
+  value: string;
+  source: (typeof SUPABASE_URL_ENV_KEYS)[number] | (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number] | null;
+};
+
+function pickEnvValue(keys: readonly string[]): EnvLookupResult {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return { value: trimmed, source: key };
+      }
+    }
+  }
+
+  return { value: '', source: null };
+}
+
+function formatEnvKeyList(keys: readonly string[]) {
+  if (keys.length === 0) return '';
+  if (keys.length === 1) return keys[0];
+  if (keys.length === 2) return `${keys[0]} or ${keys[1]}`;
+  return `${keys.slice(0, -1).join(', ')}, or ${keys[keys.length - 1]}`;
+}
+
+const urlEnv = pickEnvValue(SUPABASE_URL_ENV_KEYS);
+const keyEnv = pickEnvValue(SUPABASE_ANON_KEY_ENV_KEYS);
+
+const rawUrl = urlEnv.value;
+const rawKey = keyEnv.value;
 
 const configIssues: string[] = [];
 
 if (!rawUrl) {
   configIssues.push(
-    'EXPO_PUBLIC_SUPABASE_URL is missing. Copy the "Project URL" from Supabase → Settings → API.'
+    `Supabase URL is missing. Define ${formatEnvKeyList(
+      SUPABASE_URL_ENV_KEYS,
+    )} in your environment (for example, in .env).`,
   );
 } else if (!/^https:\/\/.+\.supabase\.co/.test(rawUrl)) {
   configIssues.push(
-    `EXPO_PUBLIC_SUPABASE_URL looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co.`
+    `Supabase URL from ${urlEnv.source ?? SUPABASE_URL_ENV_KEYS[0]} looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co.`
   );
 }
 
 if (!rawKey) {
   configIssues.push(
-    'EXPO_PUBLIC_SUPABASE_ANON_KEY is missing. Copy the "anon public" key from Supabase → Settings → API.'
+    `Supabase anon key is missing. Define ${formatEnvKeyList(
+      SUPABASE_ANON_KEY_ENV_KEYS,
+    )} in your environment (for example, in .env).`
   );
 } else if (!rawKey.startsWith('eyJ')) {
   configIssues.push(
-    `EXPO_PUBLIC_SUPABASE_ANON_KEY looks malformed (prefix "${rawKey.slice(0, 8)}").`
+    `Supabase anon key from ${
+      keyEnv.source ?? SUPABASE_ANON_KEY_ENV_KEYS[0]
+    } looks malformed (prefix "${rawKey.slice(0, 8)}").`
   );
 }
 
