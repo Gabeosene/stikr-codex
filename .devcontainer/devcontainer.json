@@ -1,0 +1,11 @@
+{
+  "name": "Node.js Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "postCreateCommand": "corepack enable && npm i && npm run web",
+  "forwardPorts": [19006],
+  "portsAttributes": {
+    "19006": {
+      "label": "Expo Web"
+    }
+  }
+}

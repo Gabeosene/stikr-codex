@@ -3,6 +3,12 @@ import 'react-native-url-polyfill/auto';
 import { Platform } from 'react-native';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+type SupabaseGlobal = typeof globalThis & {
+  __supabaseClient?: SupabaseClient | null;
+};
+
+const globalForSupabase = globalThis as SupabaseGlobal;
+
 const rawUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || '').trim();
 const rawKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '').trim();
 
@@ -71,7 +77,10 @@ function createStorageAdapter(): StorageAdapter {
 }
 
 const storage = createStorageAdapter() ?? undefined;
-let cachedClient: SupabaseClient | null = null;
+let cachedClient: SupabaseClient | null =
+  typeof globalForSupabase.__supabaseClient === 'undefined'
+    ? null
+    : globalForSupabase.__supabaseClient ?? null;
 
 export const isSupabaseConfigured = configurationError == null;
 
@@ -93,7 +102,44 @@ export function getSupabaseClient(): SupabaseClient {
         storage,
       },
     });
+
+    globalForSupabase.__supabaseClient = cachedClient;
   }
 
   return cachedClient;
 }
+
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop, receiver) {
+    const client = getSupabaseClient();
+    const value = Reflect.get(client as unknown as Record<PropertyKey, unknown>, prop, receiver);
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+  set(_target, prop, value, receiver) {
+    const client = getSupabaseClient();
+    return Reflect.set(client as unknown as Record<PropertyKey, unknown>, prop, value, receiver);
+  },
+  has(_target, prop) {
+    const client = getSupabaseClient();
+    return Reflect.has(client as unknown as Record<PropertyKey, unknown>, prop);
+  },
+  ownKeys() {
+    const client = getSupabaseClient();
+    return Reflect.ownKeys(client as unknown as Record<PropertyKey, unknown>);
+  },
+  getOwnPropertyDescriptor(_target, prop) {
+    const client = getSupabaseClient();
+    const descriptor = Reflect.getOwnPropertyDescriptor(
+      client as unknown as Record<PropertyKey, unknown>,
+      prop
+    );
+
+    if (!descriptor) {
+      return undefined;
+    }
+
+    return { ...descriptor, configurable: true };
+  },
+});
+
+export default supabase;

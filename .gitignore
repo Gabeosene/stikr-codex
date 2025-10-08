@@ -32,6 +32,9 @@ yarn-error.*
 .env
 .env*.local
 
+# Supabase local stack artifacts
+.supabase
+
 # typescript
 *.tsbuildinfo
 

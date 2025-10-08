@@ -19,7 +19,8 @@ import { MapPinIcon, RotateCcwIcon } from 'lucide-react-native';
 import { Center } from '@/components/ui/center';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { fetchApprovedStickers, type Sticker } from '@/features/stickers/api';
+import { fetchApprovedStickers } from '@/features/stickers/api';
+import type { Sticker } from '@/features/stickers/types';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
 import { THEME } from '@/lib/theme';
 
