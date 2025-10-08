@@ -22,8 +22,15 @@ comment on table public.events is 'Server-sourced auth events synced from auth.a
 alter table public.events
   alter column metadata set default '{}'::jsonb;
 
--- RLS is managed separately; disable by default so that API policies can be set explicitly later.
-alter table public.events disable row level security;
+-- Enable row level security so that per-user policies can keep the audit mirror private.
+alter table public.events enable row level security;
+
+-- Allow authenticated clients to read only their own audit events.
+create policy if not exists "Authenticated users can read own events"
+  on public.events
+  for select
+  to authenticated
+  using (user_id = auth.uid());
 
 -- Upsert all sign-in/out entries from auth.audit_log_entries into public.events.
 create or replace function public.refresh_events_from_auth()
@@ -88,5 +95,5 @@ begin
 end;
 $$;
 
--- Ensure the service role can manage this data; grant read access to authenticated clients if desired.
-grant select on table public.events to authenticated, anon;
+grant select on table public.events to authenticated;
+grant select on table public.events to service_role;
