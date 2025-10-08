@@ -29,7 +29,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# Supabase local stack artifacts
+.supabase
 
 # typescript
 *.tsbuildinfo

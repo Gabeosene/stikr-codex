@@ -1,7 +1,7 @@
--- Enable pg_cron so that we can schedule recurring maintenance tasks.
+-- Scheduled tasks to keep the analytics schema healthy.
+
 create extension if not exists "pg_cron";
 
--- Nightly refresh of the daily auth materialized view so dashboards stay fresh.
 select
   cron.schedule(
     job_name => 'refresh_mv_auth_daily',
@@ -11,7 +11,6 @@ select
     $$
   );
 
--- Daily purge of raw auth events older than 90 days to enforce retention requirements.
 select
   cron.schedule(
     job_name => 'purge_old_auth_events',
@@ -22,7 +21,6 @@ select
     $$
   );
 
--- Daily health check: alert if we have seen zero sign-ins in the past 24 hours.
 select
   cron.schedule(
     job_name => 'auth_signin_health_check',

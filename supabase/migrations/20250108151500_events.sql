@@ -1,10 +1,7 @@
--- Supabase server-pull events setup
--- Maps auth.audit_log_entries into a lightweight public.events table and keeps it fresh.
+-- Sync auth audit log entries into a public events table for the client app.
 
--- Make sure pg_cron is available (required for the 1-minute refresh job).
 create extension if not exists pg_cron with schema cron;
 
--- Store auth events pulled from the auth schema in a table that client apps can query.
 create table if not exists public.events (
   id bigint primary key,
   happened_at timestamptz not null,
@@ -18,14 +15,11 @@ create table if not exists public.events (
 
 comment on table public.events is 'Server-sourced auth events synced from auth.audit_log_entries.';
 
--- Ensure we keep metadata tidy even when entries are updated.
 alter table public.events
   alter column metadata set default '{}'::jsonb;
 
--- RLS is managed separately; disable by default so that API policies can be set explicitly later.
 alter table public.events disable row level security;
 
--- Upsert all sign-in/out entries from auth.audit_log_entries into public.events.
 create or replace function public.refresh_events_from_auth()
 returns void
 language plpgsql
@@ -70,10 +64,8 @@ begin
 end;
 $$;
 
--- Populate the table immediately.
 select public.refresh_events_from_auth();
 
--- Schedule a 1-minute sync job that keeps pulling new events.
 do $$
 begin
   if not exists (
@@ -88,5 +80,4 @@ begin
 end;
 $$;
 
--- Ensure the service role can manage this data; grant read access to authenticated clients if desired.
 grant select on table public.events to authenticated, anon;

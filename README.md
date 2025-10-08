@@ -28,7 +28,20 @@ After installing dependencies, duplicate the provided environment template so Ex
 cp .env.example .env
 ```
 
-Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server.
+Update the values in `.env` with your Supabase project's URL and a freshly rotated anon key before starting the dev server.
+
+## Local Supabase development
+
+This project ships with a Supabase CLI configuration so you can spin up a local Postgres + Studio stack in Codespaces or CI:
+
+```bash
+npm install
+npm run db:start   # launches the Supabase stack defined in supabase/config.toml
+# in a separate terminal
+npm run db:seed    # resets the database using migrations and seeds it with demo data
+```
+
+The Supabase CLI stores data in `.supabase` by default. Stop the containers with `npm run db:stop` when you're done developing locally.
 
 This will start the Expo Dev Server. Open the app in:
 
@@ -37,6 +50,48 @@ This will start the Expo Dev Server. Open the app in:
 - **Web**: press `w` to run in a browser
 
 You can also scan the QR code using the [Expo Go](https://expo.dev/go) app on your device. This project fully supports running in Expo Go for quick testing on physical devices.
+
+## Web deployment (Vercel)
+
+- Build the static web bundle with `npm run build:web`. This runs `expo export` and writes the optimized web output to the `dist/` directory.
+- Deploy the project to Vercel with the build command set to `npm run build:web` and the output directory set to `dist/`.
+- The included [`vercel.json`](./vercel.json) configures a single-page-app rewrite (`/(.*) → /`) so [Expo Router](https://expo.dev/router) dynamic routes resolve correctly when a user reloads or deep-links to nested paths.
+## EAS Update preview releases
+
+EAS Update enables you to ship OTA previews without submitting a new build to the app stores. This project is pre-configured with a `preview` channel that maps to a matching branch.
+
+### 1. Install the CLI and authenticate
+
+```bash
+npm install
+npx eas login
+```
+
+If you're using CI, set the `EXPO_TOKEN` environment variable instead of logging in interactively. Running `npx eas init` afterwards will register the project with your Expo account and replace `YOUR-EAS-PROJECT-ID` in [`app.json`](./app.json) with the real project ID.
+
+### 2. Create the preview branch and channel
+
+```bash
+npx eas branch:create preview
+npx eas channel:create preview --branch preview
+```
+
+### 3. Publish updates to the preview channel
+
+```bash
+npx eas update --branch preview --message "preview"
+# or with the included npm script
+npm run eas:update:preview
+```
+
+Every publish prints a "Project page" URL containing the QR code and shareable link for the release (for example: `https://expo.dev/accounts/<account>/projects/stikemup-app?release-channel=preview`). Share that URL with teammates so they can install the OTA update.
+
+### Loading the preview on devices
+
+1. Install the [Expo Go](https://expo.dev/go) app (or a custom development build) on the target iOS/Android device.
+2. Open the "Project page" URL generated after publishing. The page shows both a QR code and a "Open project" button.
+3. Scan the QR code with Expo Go or tap the button on the device to load the latest preview update from the `preview` channel.
+4. Whenever you push another update with `npm run eas:update:preview`, testers just need to refresh the app in Expo Go to receive the new bundle.
 
 ## Adding components
 
@@ -82,7 +137,7 @@ To dive deeper into the technologies used:
 
 ## Supabase auth event backfill (server pull)
 
-To capture server-side sign-ins and sign-outs alongside the client/edge `public.auth_events`, run the SQL in [`supabase_events_setup.sql`](./supabase_events_setup.sql) using the SQL editor in the Supabase dashboard (or any SQL client authenticated with the service role key).
+To capture server-side sign-ins and sign-outs alongside the client/edge `public.auth_events`, run the migration [`supabase/migrations/20250108151500_events.sql`](./supabase/migrations/20250108151500_events.sql) using the SQL editor in the Supabase dashboard (or any SQL client authenticated with the service role key).
 
 This script will:
 
