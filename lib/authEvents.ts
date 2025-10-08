@@ -4,46 +4,92 @@ import * as SecureStore from 'expo-secure-store'
 import Constants from 'expo-constants'
 import 'react-native-get-random-values'
 import { v4 as uuid } from 'uuid'
-import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
-const supabase = createClient(process.env.EXPO_PUBLIC_SUPABASE_URL!, process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!)
+import { getSupabaseClient, getSupabaseConfigurationError } from './supabase'
 
 const DEVICE_KEY = 'stikr_device_id'
+
+let inMemoryDeviceId: string | null = null
+
 async function getDeviceId() {
-  let id = await SecureStore.getItemAsync(DEVICE_KEY)
-  if (!id) {
-    id = uuid()
-    await SecureStore.setItemAsync(DEVICE_KEY, id)
+  if (Platform.OS === 'web') {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const existing = window.localStorage.getItem(DEVICE_KEY)
+        if (existing) {
+          return existing
+        }
+        const generated = uuid()
+        window.localStorage.setItem(DEVICE_KEY, generated)
+        return generated
+      }
+    } catch (error) {
+      console.warn('[authEvents] localStorage unavailable, using in-memory device id', error)
+    }
   }
-  return id
+
+  const secureStoreAvailable = await SecureStore.isAvailableAsync().catch(() => false)
+
+  if (secureStoreAvailable) {
+    try {
+      let id = await SecureStore.getItemAsync(DEVICE_KEY)
+      if (!id) {
+        id = uuid()
+        await SecureStore.setItemAsync(DEVICE_KEY, id)
+      }
+      return id
+    } catch (error) {
+      console.warn('[authEvents] secure storage unavailable, falling back to in-memory id', error)
+    }
+  }
+
+  if (!inMemoryDeviceId) {
+    inMemoryDeviceId = uuid()
+  }
+  return inMemoryDeviceId
 }
 
 // We define a client-side "session_id" per login session.
 // Generate at SIGNED_IN; clear at SIGNED_OUT.
 let currentSessionId: string | null = null
 
-async function postAuthEvent(payload: any) {
-  const { data: { session } } = await supabase.auth.getSession()
+async function postAuthEvent(client: SupabaseClient, payload: any) {
+  const {
+    data: { session },
+  } = await client.auth.getSession()
   if (!session) return
-  await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/log-event`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify(payload),
+  const { error } = await client.functions.invoke('log-event', {
+    body: payload,
   })
+  if (error) {
+    console.warn('[authEvents] failed to log auth event', { error })
+  }
 }
 
 export async function wireAuthEvents() {
+  const configError = getSupabaseConfigurationError()
+  if (configError) {
+    console.warn('[authEvents] skipping wiring – Supabase misconfigured:', configError.message)
+    return
+  }
+
+  let client: SupabaseClient
+  try {
+    client = getSupabaseClient()
+  } catch (error) {
+    console.warn('[authEvents] unable to create Supabase client', error)
+    return
+  }
+
   const device_id = await getDeviceId()
   const app_version = Constants?.expoConfig?.version ?? null
   const platform = Platform.OS as 'ios' | 'android' | 'web'
 
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  client.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN') {
       currentSessionId = uuid()
-      await postAuthEvent({
+      await postAuthEvent(client, {
         type: 'user.signed_in',
         session_id: currentSessionId,
         platform,
@@ -57,7 +103,7 @@ export async function wireAuthEvents() {
       })
     }
     if (event === 'SIGNED_OUT') {
-      await postAuthEvent({
+      await postAuthEvent(client, {
         type: 'user.signed_out',
         session_id: currentSessionId ?? uuid(),
         platform,
