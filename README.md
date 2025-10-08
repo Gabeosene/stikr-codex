@@ -28,8 +28,7 @@ After installing dependencies, duplicate the provided environment template so Ex
 cp .env.example .env
 ```
 
-Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server. The `.env` file is gitignored so your credentials stay out of version control.
-Update the values in `.env` with your Supabase project's URL and a freshly rotated anon key before starting the dev server.
+Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server. The `.env` file is gitignored so your credentials stay out of version control. The Supabase client accepts either the Expo-specific `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` variables or the more generic `SUPABASE_URL`/`SUPABASE_ANON_KEY` names, so use whichever style best fits your deployment setup and remember to rotate the anon key regularly.
 
 ## Local Supabase development
 
