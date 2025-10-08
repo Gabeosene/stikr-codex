@@ -10,18 +10,20 @@ import { GhostButton } from '@/components/ui/ghost-button';
 import { ErrorView } from '@/components/ui/error-view';
 import { fetchStickerById, fetchExperiences, type Experience, type Sticker } from '@/features/stickers/api';
 import { openExperience } from '@/lib/experience';
+import { getSupabaseConfigurationError } from '@/lib/supabase';
 
 export default function StickerDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const sid = Array.isArray(id) ? id[0] : id;
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const supabaseConfigError = getSupabaseConfigurationError();
 
   React.useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  const canQuery = isHydrated && !!sid;
+  const canQuery = isHydrated && !!sid && !supabaseConfigError;
 
   const {
     data: sticker,
@@ -94,6 +96,18 @@ export default function StickerDetails() {
         return `Open ${String(exp.type).replace(/_/g, ' ')}`;
     }
   }, []);
+
+  if (supabaseConfigError) {
+    return (
+      <Center>
+        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Supabase not configured.</Text>
+        <Text style={{ color: '#666', textAlign: 'center' }}>{supabaseConfigError.message}</Text>
+        <GhostButton style={{ marginTop: 12 }} onPress={() => router.back()}>
+          Go back
+        </GhostButton>
+      </Center>
+    );
+  }
 
   if (!sid) {
     return (

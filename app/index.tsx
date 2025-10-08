@@ -63,7 +63,7 @@ export default function BrowseScreen() {
   } = useQuery<Sticker[]>({
     queryKey: ['stickers'],
     queryFn: fetchApprovedStickers,
-    enabled: isHydrated,
+    enabled: isHydrated && !supabaseConfigError,
     retry: 0,
   });
 
@@ -72,6 +72,19 @@ export default function BrowseScreen() {
       console.error('[stickers] query error:', error);
     }
   }, [isError, error]);
+
+  if (supabaseConfigError) {
+    return (
+      <>
+        <Stack.Screen options={SCREEN_OPTIONS[colorScheme ?? 'light']} />
+
+        <Center style={{ padding: 24, gap: 12 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', textAlign: 'center' }}>Supabase not configured.</Text>
+          <Text style={{ color: '#666', textAlign: 'center' }}>{supabaseConfigError.message}</Text>
+        </Center>
+      </>
+    );
+  }
 
   return (
     <>
