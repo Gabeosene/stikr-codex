@@ -28,9 +28,15 @@ type EnvLookupResult = {
   source: (typeof SUPABASE_URL_ENV_KEYS)[number] | (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number] | null;
 };
 
-function pickEnvValue(keys: readonly string[]): EnvLookupResult {
-  for (const key of keys) {
-    const value = process.env[key];
+type EnvCandidate<Key extends string> = {
+  key: Key;
+  value: string | undefined;
+};
+
+function pickEnvCandidate<Key extends string>(
+  candidates: readonly EnvCandidate<Key>[],
+): EnvLookupResult {
+  for (const { key, value } of candidates) {
     if (typeof value === 'string') {
       const trimmed = value.trim();
       if (trimmed) {
@@ -49,8 +55,18 @@ function formatEnvKeyList(keys: readonly string[]) {
   return `${keys.slice(0, -1).join(', ')}, or ${keys[keys.length - 1]}`;
 }
 
-const urlEnv = pickEnvValue(SUPABASE_URL_ENV_KEYS);
-const keyEnv = pickEnvValue(SUPABASE_ANON_KEY_ENV_KEYS);
+const urlEnv = pickEnvCandidate([
+  { key: 'EXPO_PUBLIC_SUPABASE_URL', value: process.env.EXPO_PUBLIC_SUPABASE_URL },
+  { key: 'SUPABASE_URL', value: process.env.SUPABASE_URL },
+  { key: 'NEXT_PUBLIC_SUPABASE_URL', value: process.env.NEXT_PUBLIC_SUPABASE_URL },
+  { key: 'PUBLIC_SUPABASE_URL', value: process.env.PUBLIC_SUPABASE_URL },
+]);
+const keyEnv = pickEnvCandidate([
+  { key: 'EXPO_PUBLIC_SUPABASE_ANON_KEY', value: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY },
+  { key: 'SUPABASE_ANON_KEY', value: process.env.SUPABASE_ANON_KEY },
+  { key: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+  { key: 'PUBLIC_SUPABASE_ANON_KEY', value: process.env.PUBLIC_SUPABASE_ANON_KEY },
+]);
 
 const rawUrl = urlEnv.value;
 const rawKey = keyEnv.value;
