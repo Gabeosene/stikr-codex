@@ -55,6 +55,27 @@ const keyEnv = pickEnvValue(SUPABASE_ANON_KEY_ENV_KEYS);
 const rawUrl = urlEnv.value;
 const rawKey = keyEnv.value;
 
+function isValidSupabaseUrl(value: string): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  if (/^https:\/\/.+\.supabase\.co\/?$/.test(normalized)) {
+    return true;
+  }
+
+  if (/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(normalized)) {
+    return true;
+  }
+
+  return false;
+}
+
 const configIssues: string[] = [];
 
 if (!rawUrl) {
@@ -63,9 +84,11 @@ if (!rawUrl) {
       SUPABASE_URL_ENV_KEYS,
     )} in your environment (for example, in .env).`,
   );
-} else if (!/^https:\/\/.+\.supabase\.co/.test(rawUrl)) {
+} else if (!isValidSupabaseUrl(rawUrl)) {
   configIssues.push(
-    `Supabase URL from ${urlEnv.source ?? SUPABASE_URL_ENV_KEYS[0]} looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co.`
+    `Supabase URL from ${
+      urlEnv.source ?? SUPABASE_URL_ENV_KEYS[0]
+    } looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co or http://127.0.0.1:54321 when using supabase start.`
   );
 }
 
