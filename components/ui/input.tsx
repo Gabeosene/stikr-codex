@@ -4,12 +4,21 @@ import { Platform, TextInput, type TextInputProps } from 'react-native';
 function Input({
   className,
   placeholderClassName,
+  style,
   ...props
 }: TextInputProps & React.RefAttributes<TextInput>) {
+  const nativeShadowClass = Platform.select({ web: '', default: 'shadow-sm shadow-black/5' });
+  const webShadowStyle = Platform.OS === 'web' ? { boxShadow: '0px 1px 2px rgba(15, 23, 42, 0.08)' } : null;
+  const resolvedStyle = webShadowStyle
+    ? ([webShadowStyle, ...(style ? (Array.isArray(style) ? style : [style]) : [])] as TextInputProps['style'])
+    : style;
+
   return (
     <TextInput
+      style={resolvedStyle}
       className={cn(
-        'dark:bg-input/30 border-input bg-background text-foreground flex h-10 w-full min-w-0 flex-row items-center rounded-md border px-3 py-1 text-base leading-5 shadow-sm shadow-black/5 sm:h-9',
+        'dark:bg-input/30 border-input bg-background text-foreground flex h-10 w-full min-w-0 flex-row items-center rounded-md border px-3 py-1 text-base leading-5 sm:h-9',
+        nativeShadowClass,
         props.editable === false &&
           cn(
             'opacity-50',

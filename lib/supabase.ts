@@ -30,11 +30,12 @@ type EnvLookupResult = {
 
 function pickEnvValue(keys: readonly string[]): EnvLookupResult {
   for (const key of keys) {
+    const envKey = key as EnvLookupResult['source'];
     const value = process.env[key];
     if (typeof value === 'string') {
       const trimmed = value.trim();
       if (trimmed) {
-        return { value: trimmed, source: key };
+        return { value: trimmed, source: envKey };
       }
     }
   }
@@ -158,6 +159,14 @@ export const isSupabaseConfigured = configurationError == null;
 
 export function getSupabaseConfigurationError() {
   return configurationError;
+}
+
+export function tryGetSupabaseClient(): SupabaseClient | null {
+  if (configurationError) {
+    return null;
+  }
+
+  return getSupabaseClient();
 }
 
 export function getSupabaseClient(): SupabaseClient {

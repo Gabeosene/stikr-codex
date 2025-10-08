@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, TextInput, Button, Text } from 'react-native';
 
-import { getSupabaseClient, getSupabaseConfigurationError } from '@/lib/supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from '@/lib/supabase';
 
 export default function AuthTest() {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ export default function AuthTest() {
   const supabaseConfigError = getSupabaseConfigurationError();
   const supabase = useMemo(() => {
     if (supabaseConfigError) return null;
-    return getSupabaseClient();
+    return tryGetSupabaseClient();
   }, [supabaseConfigError]);
 
   if (supabaseConfigError) {

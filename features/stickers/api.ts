@@ -1,5 +1,5 @@
 // features/stickers/api.ts
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from '@/lib/supabase';
 
 import type { Experience, Sticker } from './types';
 
@@ -14,7 +14,7 @@ const EXPERIENCE_FIELDS = 'id,sticker_id,type,payload';
 
 /** Grid list */
 export async function fetchStickers(): Promise<Sticker[]> {
-  const supabase = getSupabaseClient();
+  const supabase = requireSupabaseClient();
   const rows = await withFieldFallback<StickerRow[]>(
     (fields) =>
       supabase
@@ -33,7 +33,7 @@ export const fetchApprovedStickers = fetchStickers;
 
 /** Details page */
 export async function fetchStickerById(id: string) {
-  const supabase = getSupabaseClient();
+  const supabase = requireSupabaseClient();
   const row = await withFieldFallback<StickerRow | null>(
     (fields) =>
       supabase
@@ -50,7 +50,7 @@ export async function fetchStickerById(id: string) {
 
 /** Optional attached experiences */
 export async function fetchExperiences(stickerId: string): Promise<Experience[]> {
-  const supabase = getSupabaseClient();
+  const supabase = requireSupabaseClient();
   const { data, error } = await supabase
     .from('experiences')
     .select(EXPERIENCE_FIELDS)
@@ -94,6 +94,20 @@ async function withFieldFallback<T>(
   }
 
   return fallback;
+}
+
+function requireSupabaseClient() {
+  const supabase = tryGetSupabaseClient();
+  if (supabase) {
+    return supabase;
+  }
+
+  const configError = getSupabaseConfigurationError();
+  if (configError) {
+    throw configError;
+  }
+
+  throw new Error('Supabase client is not configured.');
 }
 
 function normalizeStickerRow(row: StickerRow): Sticker {
