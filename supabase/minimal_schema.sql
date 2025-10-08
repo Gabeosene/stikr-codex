@@ -38,11 +38,16 @@ create index if not exists experiences_sticker_id_idx
 
 alter table public.experiences enable row level security;
 
-drop policy if exists "Experiences are readable" on public.experiences;
-create policy "Experiences are readable"
+drop policy if exists "Experiences for approved stickers" on public.experiences;
+create policy "Experiences for approved stickers"
     on public.experiences
     for select
-    using (true);
+    using (exists (
+        select 1
+        from public.stickers s
+        where s.id = sticker_id
+          and s.status = 'approved'
+    ));
 
 create table if not exists public.captures (
     id uuid primary key default gen_random_uuid(),
