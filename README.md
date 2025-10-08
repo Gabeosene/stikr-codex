@@ -60,14 +60,38 @@ To dive deeper into the technologies used:
 - [Nativewind Docs](https://www.nativewind.dev/)
 - [React Native Reusables](https://reactnativereusables.com)
 
-## Deploy with EAS
+## Supabase auth event backfill (server pull)
 
-The easiest way to deploy your app is with [Expo Application Services (EAS)](https://expo.dev/eas).
+To capture server-side sign-ins and sign-outs alongside the client/edge `public.auth_events`, run the SQL in [`supabase_events_setup.sql`](./supabase_events_setup.sql) using the SQL editor in the Supabase dashboard (or any SQL client authenticated with the service role key).
 
-- [EAS Build](https://docs.expo.dev/build/introduction/)
-- [EAS Updates](https://docs.expo.dev/eas-update/introduction/)
-- [EAS Submit](https://docs.expo.dev/submit/introduction/)
+This script will:
 
----
+- Create a lightweight `public.events` table populated from `auth.audit_log_entries`.
+- Upsert sign-in and sign-out rows immediately via `public.refresh_events_from_auth()`.
+- Schedule a one-minute pg_cron job to keep `public.events` synced going forward.
 
-If you enjoy using React Native Reusables, please consider giving it a ⭐ on [GitHub](https://github.com/founded-labs/react-native-reusables). Your support means a lot!
+### Verifying the sync
+
+You should see recent server-sourced events appear after the job runs:
+
+```sql
+-- Confirm the job is registered
+select jobname, schedule, command
+from cron.job
+where jobname = 'sync_auth_events_from_audit_log';
+
+-- Review the last 24 hours of sign-ins/outs sourced from auth.audit_log_entries
+select event_type, count(*)
+from public.events
+where happened_at >= now() - interval '24 hours'
+group by event_type
+order by event_type;
+
+select id, happened_at, event_type, user_id
+from public.events
+where happened_at >= now() - interval '24 hours'
+order by happened_at desc
+limit 25;
+```
+
+Once those queries return data, your `public.events` table is successfully mirroring the Supabase Auth audit log.
