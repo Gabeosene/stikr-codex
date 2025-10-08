@@ -227,7 +227,7 @@ function isMissingColumnError(error: unknown): boolean {
   const err = error as { code?: unknown; message?: unknown };
   if (err.code === '42703') return true;
   if (typeof err.message === 'string') {
-    return /does not exist$/i.test(err.message) || /column.+does not exist/i.test(err.message);
+    return /\b(column|attribute)\b[^.]*does not exist/i.test(err.message);
   }
   return false;
 }

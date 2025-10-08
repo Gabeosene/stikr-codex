@@ -1,0 +1,52 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-preview:
+    name: Build and deploy preview
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+      - name: Build web app
+        run: npm run build --if-present
+      - name: Generate Vercel build output
+        run: vercel build --token=$VERCEL_TOKEN
+      - name: Create preview deployment
+        id: deploy
+        run: |
+          set -eo pipefail
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN | tail -n 1)
+          echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+      - name: Share preview URL
+        if: github.event_name == 'pull_request' && steps.deploy.outputs.url != ''
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          identifier: vercel-preview
+          body: |
+            🚀 Preview deployment ready: ${{ steps.deploy.outputs.url }}
