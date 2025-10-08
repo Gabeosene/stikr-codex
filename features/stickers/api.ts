@@ -28,7 +28,7 @@ const STICKER_FIELD_VARIANTS = [
 const EXPERIENCE_FIELDS = 'id,sticker_id,type,payload';
 
 /** Grid list */
-export async function fetchApprovedStickers(): Promise<Sticker[]> {
+export async function fetchStickers(): Promise<Sticker[]> {
   const supabase = getSupabaseClient();
   const rows = await withFieldFallback<StickerRow[]>(
     (fields) =>
@@ -42,6 +42,9 @@ export async function fetchApprovedStickers(): Promise<Sticker[]> {
 
   return rows.map(normalizeStickerRow);
 }
+
+/** @deprecated Use {@link fetchStickers} instead. */
+export const fetchApprovedStickers = fetchStickers;
 
 /** Details page */
 export async function fetchStickerById(id: string) {
