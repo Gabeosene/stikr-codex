@@ -13,7 +13,6 @@ import type { Session } from '@supabase/supabase-js';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Center } from '@/components/ui/center';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
@@ -95,12 +94,21 @@ export default function AuthScreen() {
     (mode === 'sign-in' || trimmedConfirmPassword === trimmedPassword);
 
   const handleSubmit = React.useCallback(async () => {
-    if (!supabase || !canSubmit) return;
+    if (!canSubmit) return;
 
     setSubmitting(true);
     setStatus(null);
 
     try {
+      if (!supabase) {
+        await new Promise((resolve) => setTimeout(resolve, 450));
+        setStatus({
+          tone: 'info',
+          message: 'Authentication is disabled in this preview build.',
+        });
+        return;
+      }
+
       if (mode === 'sign-up') {
         const { error } = await supabase.auth.signUp({
           email: trimmedEmail,
@@ -179,17 +187,7 @@ export default function AuthScreen() {
     [colorScheme]
   );
 
-  if (supabaseConfigError) {
-    return (
-      <>
-        <Stack.Screen options={HEADER_OPTIONS[colorScheme ?? 'light']} />
-        <Center>
-          <Text className="text-xl font-semibold text-center">Supabase not configured.</Text>
-          <Text className="text-muted-foreground mt-2 text-center">{supabaseConfigError.message}</Text>
-        </Center>
-      </>
-    );
-  }
+  const supabaseUnavailable = supabaseConfigError != null || supabase == null;
 
   return (
     <>
@@ -216,7 +214,18 @@ export default function AuthScreen() {
                 </CardDescription>
               </CardHeader>
               <CardContent style={{ gap: 18, paddingBottom: 24 }}>
-                {isSignedIn ? (
+                {supabaseUnavailable ? (
+                  <View style={getStatusStyles('info')}>
+                    <Text className="font-semibold">Demo only</Text>
+                    <Text className="text-muted-foreground mt-1">
+                      Supabase credentials are not configured, so the authentication form below is for
+                      demonstration purposes only.
+                    </Text>
+                    {supabaseConfigError ? (
+                      <Text className="text-muted-foreground mt-2 text-xs">{supabaseConfigError.message}</Text>
+                    ) : null}
+                  </View>
+                ) : isSignedIn ? (
                   <View style={getStatusStyles('info')}>
                     <Text className="font-medium">
                       You are already signed in as {session?.user?.email ?? 'a user'}.
@@ -292,6 +301,13 @@ export default function AuthScreen() {
                       onPress={handleSubmit}
                       disabled={!canSubmit}
                       style={{ height: 48, borderRadius: 12, backgroundColor: palette.primary }}
+                      accessibilityLabel={
+                        supabaseUnavailable
+                          ? 'Demo submit (no authentication backend configured)'
+                          : mode === 'sign-in'
+                            ? 'Sign in'
+                            : 'Create account'
+                      }
                     >
                       {submitting ? (
                         <ActivityIndicator color={palette.primaryForeground} />
