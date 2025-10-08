@@ -7,6 +7,7 @@ import 'react-native-reanimated'
 import '@/global.css'
 
 import React from 'react'
+import { AuthProvider } from '@/lib/auth'
 import { NAV_THEME } from '@/lib/theme'
 import { HeaderMenu } from '@/components/header-menu'
 import { ThemeProvider } from '@react-navigation/native'
@@ -61,11 +62,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack screenOptions={{ headerRight: () => <HeaderMenu /> }} />
-          <PortalHost />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack screenOptions={{ headerRight: () => <HeaderMenu /> }} />
+            <PortalHost />
+          </ThemeProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   )

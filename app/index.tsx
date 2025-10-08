@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/icon';
 import { THEME } from '@/lib/theme';
 import { fetchApprovedStickers } from '@/features/stickers/api';
 import type { Sticker } from '@/features/stickers/types';
+import { fetchStickers, type Sticker } from '@/features/stickers/api';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
 import { MapPinIcon, MoonStarIcon, SunIcon } from 'lucide-react-native';
 
@@ -63,7 +64,7 @@ export default function BrowseScreen() {
     isFetching,
   } = useQuery<Sticker[]>({
     queryKey: ['stickers'],
-    queryFn: fetchApprovedStickers,
+    queryFn: fetchStickers,
     enabled: isHydrated && !supabaseConfigError,
     retry: 0,
   });
