@@ -8,6 +8,7 @@ import '@/global.css'
 
 import React from 'react'
 import { NAV_THEME } from '@/lib/theme'
+import { HeaderMenu } from '@/components/header-menu'
 import { ThemeProvider } from '@react-navigation/native'
 import { PortalHost } from '@rn-primitives/portal'
 import { Stack } from 'expo-router'
@@ -62,7 +63,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
           <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack />
+          <Stack screenOptions={{ headerRight: () => <HeaderMenu /> }} />
           <PortalHost />
         </ThemeProvider>
       </QueryClientProvider>
