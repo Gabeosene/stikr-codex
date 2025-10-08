@@ -1,7 +1,7 @@
 import React from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 
-import { getSupabaseClient, getSupabaseConfigurationError } from './supabase'
+import { getSupabaseClient, getSupabaseConfigurationError, tryGetSupabaseClient } from './supabase'
 
 export type AuthContextValue = {
   session: Session | null
@@ -27,36 +27,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const client = tryGetSupabaseClient()
+    if (!client) {
+      setLoading(false)
+      return () => {
+        isMounted = false
+      }
+    }
+
     let unsubscribe: (() => void) | undefined
 
-    try {
-      const client = getSupabaseClient()
-
-      client.auth
-        .getSession()
-        .then(({ data }) => {
-          if (!isMounted) return
-          setSession(data.session ?? null)
-          setUser(data.session?.user ?? null)
-          setLoading(false)
-        })
-        .catch(() => {
-          if (!isMounted) return
-          setLoading(false)
-        })
-
-      const { data: authListener } = client.auth.onAuthStateChange((_event, nextSession) => {
+    client.auth
+      .getSession()
+      .then(({ data }) => {
         if (!isMounted) return
-        setSession(nextSession ?? null)
-        setUser(nextSession?.user ?? null)
+        setSession(data.session ?? null)
+        setUser(data.session?.user ?? null)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (!isMounted) return
         setLoading(false)
       })
 
-      unsubscribe = () => authListener?.subscription.unsubscribe()
-    } catch (error) {
-      console.warn(error)
+    const { data: authListener } = client.auth.onAuthStateChange((_event, nextSession) => {
+      if (!isMounted) return
+      setSession(nextSession ?? null)
+      setUser(nextSession?.user ?? null)
       setLoading(false)
-    }
+    })
+
+    unsubscribe = () => authListener?.subscription.unsubscribe()
 
     return () => {
       isMounted = false

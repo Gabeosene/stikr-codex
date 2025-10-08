@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
-import { getSupabaseClient, getSupabaseConfigurationError } from '@/lib/supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from '@/lib/supabase';
 
 const MODES = [
   { id: 'magic-link', label: 'Magic link' },
@@ -31,12 +31,7 @@ export default function SignInScreen() {
   const supabaseConfigError = getSupabaseConfigurationError();
   const supabase = React.useMemo(() => {
     if (supabaseConfigError) return null;
-    try {
-      return getSupabaseClient();
-    } catch (err) {
-      console.warn(err);
-      return null;
-    }
+    return tryGetSupabaseClient();
   }, [supabaseConfigError]);
 
   const [mode, setMode] = React.useState<SignInMode>('magic-link');
