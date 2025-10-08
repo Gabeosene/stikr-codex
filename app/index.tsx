@@ -11,9 +11,8 @@ import { Center } from '@/components/ui/center';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { THEME } from '@/lib/theme';
-import { fetchApprovedStickers } from '@/features/stickers/api';
+import { fetchStickers } from '@/features/stickers/api';
 import type { Sticker } from '@/features/stickers/types';
-import { fetchStickers, type Sticker } from '@/features/stickers/api';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
 import { MapPinIcon, MoonStarIcon, SunIcon } from 'lucide-react-native';
 
