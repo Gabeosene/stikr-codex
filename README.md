@@ -28,7 +28,20 @@ After installing dependencies, duplicate the provided environment template so Ex
 cp .env.example .env
 ```
 
-Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server.
+Update the values in `.env` with your Supabase project's URL and a freshly rotated anon key before starting the dev server.
+
+## Local Supabase development
+
+This project ships with a Supabase CLI configuration so you can spin up a local Postgres + Studio stack in Codespaces or CI:
+
+```bash
+npm install
+npm run db:start   # launches the Supabase stack defined in supabase/config.toml
+# in a separate terminal
+npm run db:seed    # resets the database using migrations and seeds it with demo data
+```
+
+The Supabase CLI stores data in `.supabase` by default. Stop the containers with `npm run db:stop` when you're done developing locally.
 
 This will start the Expo Dev Server. Open the app in:
 
@@ -70,7 +83,7 @@ To dive deeper into the technologies used:
 
 ## Supabase auth event backfill (server pull)
 
-To capture server-side sign-ins and sign-outs alongside the client/edge `public.auth_events`, run the SQL in [`supabase_events_setup.sql`](./supabase_events_setup.sql) using the SQL editor in the Supabase dashboard (or any SQL client authenticated with the service role key).
+To capture server-side sign-ins and sign-outs alongside the client/edge `public.auth_events`, run the migration [`supabase/migrations/20250108151500_events.sql`](./supabase/migrations/20250108151500_events.sql) using the SQL editor in the Supabase dashboard (or any SQL client authenticated with the service role key).
 
 This script will:
 

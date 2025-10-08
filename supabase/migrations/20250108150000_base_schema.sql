@@ -1,5 +1,5 @@
--- Minimal schema for stickers, captures, and experiences
--- Creates core tables, indexes, trigger, and row level security policies
+-- Base schema for stickers, experiences, and captures.
+-- Generated for local development with the Supabase CLI.
 
 create extension if not exists "pgcrypto" with schema public;
 
