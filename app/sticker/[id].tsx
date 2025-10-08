@@ -8,8 +8,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Center } from '@/components/ui/center';
 import { GhostButton } from '@/components/ui/ghost-button';
 import { ErrorView } from '@/components/ui/error-view';
-import { fetchStickerById, fetchExperiences, type Experience, type Sticker } from '@/features/stickers/api';
-import { openExperience } from '@/lib/experience';
+import { fetchStickerById, fetchExperiences } from '@/features/stickers/api';
+import type { Experience, Sticker } from '@/features/stickers/types';
+import { getExperienceCta, openExperience } from '@/lib/experience';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
 
 export default function StickerDetails() {
@@ -83,17 +84,6 @@ export default function StickerDetails() {
       await openExperience(exp);
     } catch (e: any) {
       Alert.alert('Could not open', e?.message ?? 'Unknown error');
-    }
-  }, []);
-
-  const getCtaText = React.useCallback((exp: Experience) => {
-    switch (exp.type) {
-      case 'ar':
-        return 'Open AR';
-      case 'url':
-        return 'Open Link';
-      default:
-        return `Open ${String(exp.type).replace(/_/g, ' ')}`;
     }
   }, []);
 
@@ -180,7 +170,7 @@ export default function StickerDetails() {
                     alignItems: 'center',
                   }}
                 >
-                  <Text style={{ color: 'white', fontWeight: '600' }}>{getCtaText(exp)}</Text>
+                  <Text style={{ color: 'white', fontWeight: '600' }}>{getExperienceCta(exp.type)}</Text>
                 </Pressable>
               ))
             )}

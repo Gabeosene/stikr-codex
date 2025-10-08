@@ -1,30 +1,15 @@
 // features/stickers/api.ts
 import { getSupabaseClient } from '@/lib/supabase';
 
+import type { Experience, Sticker } from './types';
+
 type UnknownRecord = Record<string, unknown>;
-
-export type Sticker = {
-  id: string;
-  title: string | null;
-  artist_name: string | null;
-  image_url: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  status: 'pending' | 'approved' | 'flagged';
-  created_at?: string;
-};
-
-export type Experience = {
-  id: string;
-  sticker_id: string;
-  type: 'url' | 'webgl' | 'ar' | 'deep_link';
-  payload: Record<string, any> | null;
-};
 
 const STICKER_FIELD_VARIANTS = [
   'id,title,artist_name,image_url,latitude,longitude,status,created_at',
   '*',
 ] as const;
+
 const EXPERIENCE_FIELDS = 'id,sticker_id,type,payload';
 
 /** Grid list */
@@ -75,6 +60,7 @@ export async function fetchExperiences(stickerId: string): Promise<Experience[]>
     console.warn('[supabase] experiences error', error);
     return [];
   }
+
   return (data as Experience[] | null) ?? [];
 }
 
@@ -245,3 +231,4 @@ function isMissingColumnError(error: unknown): boolean {
   }
   return false;
 }
+
