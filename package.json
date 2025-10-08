@@ -7,6 +7,8 @@
     "android": "expo start -c --android",
     "ios": "expo start -c --ios",
     "web": "expo start -c --web",
+    "build:web": "expo export --platform web --output-dir dist",
+    "clean": "rm -rf .expo node_modules"
     "clean": "rm -rf .expo node_modules",
     "eas": "eas",
     "eas:update:preview": "eas update --branch preview --message preview"

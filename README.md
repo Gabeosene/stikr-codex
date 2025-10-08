@@ -38,6 +38,11 @@ This will start the Expo Dev Server. Open the app in:
 
 You can also scan the QR code using the [Expo Go](https://expo.dev/go) app on your device. This project fully supports running in Expo Go for quick testing on physical devices.
 
+## Web deployment (Vercel)
+
+- Build the static web bundle with `npm run build:web`. This runs `expo export` and writes the optimized web output to the `dist/` directory.
+- Deploy the project to Vercel with the build command set to `npm run build:web` and the output directory set to `dist/`.
+- The included [`vercel.json`](./vercel.json) configures a single-page-app rewrite (`/(.*) → /`) so [Expo Router](https://expo.dev/router) dynamic routes resolve correctly when a user reloads or deep-links to nested paths.
 ## EAS Update preview releases
 
 EAS Update enables you to ship OTA previews without submitting a new build to the app stores. This project is pre-configured with a `preview` channel that maps to a matching branch.
