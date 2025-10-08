@@ -23,17 +23,21 @@ const SUPABASE_ANON_KEY_ENV_KEYS = [
   'PUBLIC_SUPABASE_ANON_KEY',
 ] as const;
 
+type EnvLookupKey =
+  | (typeof SUPABASE_URL_ENV_KEYS)[number]
+  | (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number];
+
 type EnvLookupResult = {
   value: string;
-  source: (typeof SUPABASE_URL_ENV_KEYS)[number] | (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number] | null;
+  source: EnvLookupKey | null;
 };
 
-type EnvCandidate<Key extends string> = {
+type EnvCandidate<Key extends EnvLookupKey> = {
   key: Key;
   value: string | undefined;
 };
 
-function pickEnvCandidate<Key extends string>(
+function pickEnvCandidate<Key extends EnvLookupKey>(
   candidates: readonly EnvCandidate<Key>[],
 ): EnvLookupResult {
   for (const { key, value } of candidates) {
