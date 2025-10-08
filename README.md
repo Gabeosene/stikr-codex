@@ -20,6 +20,23 @@ To run the development server:
     pnpm dev
     # or
     bun dev
+    # or
+    yarn dev
+    # or
+    pnpm dev
+    # or
+    bun dev
+Node
+
+This repository pins a recommended Node version in `.nvmrc`. Use `nvm` or your system Node manager to switch to Node 18.18.0 before installing dependencies to avoid "unsupported engine" warnings from some packages:
+
+```bash
+# if you use nvm
+nvm install
+nvm use
+# then install dependencies
+npm install
+```
 ```
 
 After installing dependencies, duplicate the provided environment template so Expo can load the Supabase credentials at runtime:
