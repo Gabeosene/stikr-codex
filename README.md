@@ -28,7 +28,7 @@ After installing dependencies, duplicate the provided environment template so Ex
 cp .env.example .env
 ```
 
-Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server.
+Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server. The `.env` file is gitignored so your credentials stay out of version control.
 
 This will start the Expo Dev Server. Open the app in:
 
