@@ -25,8 +25,7 @@ alter table public.events
 -- Enable row level security so that per-user policies can keep the audit mirror private.
 alter table public.events enable row level security;
 
--- Allow authenticated clients to read only their own audit events.
-create policy if not exists "Authenticated users can read own events"
+create policy "Authenticated users can read own events"
   on public.events
   for select
   to authenticated
