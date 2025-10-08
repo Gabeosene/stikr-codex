@@ -38,6 +38,7 @@ create index if not exists experiences_sticker_id_idx
 
 alter table public.experiences enable row level security;
 
+drop policy if exists "Experiences are readable" on public.experiences;
 drop policy if exists "Experiences for approved stickers" on public.experiences;
 create policy "Experiences for approved stickers"
     on public.experiences
