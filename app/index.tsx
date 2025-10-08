@@ -11,11 +11,13 @@ import { Center } from '@/components/ui/center';
 import { THEME } from '@/lib/theme';
 import { fetchApprovedStickers, type Sticker } from '@/features/stickers/api';
 import { getSupabaseConfigurationError } from '@/lib/supabase';
+import { MapPinIcon, MoonStarIcon, SunIcon } from 'lucide-react-native';
 
 const BASE_HEADER_OPTIONS = {
   title: 'Stickers',
   headerTransparent: true,
   headerShadowVisible: true,
+  headerRight: () => <HeaderActions />,
 };
 
 const SCREEN_OPTIONS = {
@@ -143,6 +145,33 @@ export default function BrowseScreen() {
         />
       )}
     </>
+  );
+}
+
+const THEME_ICONS = {
+  light: SunIcon,
+  dark: MoonStarIcon,
+};
+
+function HeaderActions() {
+  return (
+    <View style={{ flexDirection: 'row', gap: 4 }}>
+      <Link href="/map" asChild>
+        <Button size="icon" variant="ghost" className="rounded-full web:mx-1">
+          <Icon as={MapPinIcon} className="size-5" />
+        </Button>
+      </Link>
+      <ThemeToggle />
+    </View>
+  );
+}
+
+function ThemeToggle() {
+  const { colorScheme, toggleColorScheme } = useColorScheme();
+  return (
+    <Button onPressIn={toggleColorScheme} size="icon" variant="ghost" className="rounded-full web:mx-4">
+      <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
+    </Button>
   );
 }
 

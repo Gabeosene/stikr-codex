@@ -6,6 +6,8 @@ export type Sticker = {
   title: string | null;
   artist_name: string | null;
   image_url: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   status: 'pending' | 'approved' | 'flagged';
   created_at?: string;
 };
@@ -17,7 +19,7 @@ export type Experience = {
   payload: Record<string, any> | null;
 };
 
-const STICKER_FIELDS = 'id,title,artist_name,image_url,status,created_at';
+const STICKER_FIELDS = 'id,title,artist_name,image_url,latitude,longitude,status,created_at';
 const EXPERIENCE_FIELDS = 'id,sticker_id,type,payload';
 
 /** Grid list */
