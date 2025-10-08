@@ -131,6 +131,30 @@ function HeaderMenu() {
     return { top, right };
   }, [anchorPosition]);
 
+  const shadowStyle = React.useMemo(() => {
+    if (Platform.OS === 'web') {
+      return { boxShadow: '0px 12px 20px rgba(15, 23, 42, 0.15)' } as const;
+    }
+
+    return (
+      Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 12 },
+        },
+        android: { elevation: 12 },
+        default: {
+          shadowColor: 'rgba(15, 23, 42, 0.15)',
+          shadowOpacity: 1,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 12 },
+        },
+      }) ?? {}
+    );
+  }, []);
+
   const themeLabel = colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 
   return (
@@ -150,25 +174,7 @@ function HeaderMenu() {
         <Portal name="header-menu">
           <Pressable style={styles.overlay} onPress={closeMenu} accessibilityRole="button" accessibilityLabel="Close menu" />
           <View
-            style={[
-              styles.menuContainer,
-              menuPositionStyle,
-              Platform.select({
-                ios: {
-                  shadowColor: '#000',
-                  shadowOpacity: 0.15,
-                  shadowRadius: 20,
-                  shadowOffset: { width: 0, height: 12 },
-                },
-                android: { elevation: 12 },
-                default: {
-                  shadowColor: 'rgba(15, 23, 42, 0.15)',
-                  shadowOpacity: 1,
-                  shadowRadius: 20,
-                  shadowOffset: { width: 0, height: 12 },
-                },
-              }),
-            ]}
+            style={[styles.menuContainer, menuPositionStyle, shadowStyle]}
             className="border border-border bg-popover"
           >
             <View className="px-3 pb-2 pt-3">
