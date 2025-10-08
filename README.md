@@ -22,6 +22,14 @@ To run the development server:
     bun dev
 ```
 
+After installing dependencies, duplicate the provided environment template so Expo can load the Supabase credentials at runtime:
+
+```bash
+cp .env.example .env
+```
+
+Update the values in `.env` with your Supabase project's URL and anon key before starting the dev server.
+
 This will start the Expo Dev Server. Open the app in:
 
 - **iOS**: press `i` to launch in the iOS simulator _(Mac only)_
