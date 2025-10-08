@@ -20,8 +20,9 @@ const EXPERIENCE_KEY_PRIORITY: Record<Experience['type'], string[]> = {
 
 const FALLBACK_KEYS = ['link', 'href', 'url', 'webgl', 'deep_link', 'deeplink', 'ar'];
 
-export function getExperienceCta(type: Experience['type']): string {
-  return EXPERIENCE_LABELS[type] ?? `Open ${formatExperienceType(type)}`;
+export function getExperienceCta(type: Experience['type'] | null | undefined): string {
+  const label = typeof type === 'string' ? EXPERIENCE_LABELS[type as Experience['type']] : undefined;
+  return label ?? `Open ${formatExperienceType(type)}`;
 }
 
 export async function openExperience(exp: Experience) {
@@ -60,10 +61,15 @@ function resolveExperienceUrl(exp: Experience): string | null {
   return null;
 }
 
-function formatExperienceType(type: Experience['type']): string {
-  return type
+function formatExperienceType(type: Experience['type'] | null | undefined): string {
+  const normalized =
+    typeof type === 'string' ? type : type == null ? 'Experience' : String(type);
+
+  const formatted = normalized
     .split(/[_\s-]+/)
     .filter(Boolean)
     .map((part) => part[0]?.toUpperCase() + part.slice(1))
     .join(' ');
+
+  return formatted || 'Experience';
 }
