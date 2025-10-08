@@ -59,6 +59,18 @@ If you don't specify any component names, you'll be prompted to select which com
 - 🔥 Edge to Edge enabled
 - 📱 Runs on iOS, Android, and Web
 
+## Preview Deployments
+
+Pull requests automatically trigger a preview deployment via [Vercel](https://vercel.com/). The GitHub Action defined in [`preview-deploy.yml`](.github/workflows/preview-deploy.yml) installs dependencies, runs the Expo web export (`npm run build`), and publishes the result to a temporary Vercel environment. When successful, the workflow leaves a sticky comment on the pull request with the preview URL.
+
+To enable the workflow, add the following repository secrets so the action can authenticate with Vercel:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Make sure these credentials correspond to the same Vercel project that should host the web build output.
+
 ## Learn More
 
 To dive deeper into the technologies used:
