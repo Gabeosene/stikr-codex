@@ -1,9 +1,11 @@
 import React from 'react';
 import {
+  Alert,
   Dimensions,
   Platform,
   Pressable,
   StyleSheet,
+  ToastAndroid,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,10 +16,12 @@ import { Portal } from '@rn-primitives/portal';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { tryGetSupabaseClient } from '@/lib/supabase';
 
 import {
   ChevronDownIcon,
   ChevronRightIcon,
+  LogOutIcon,
   MoonStarIcon,
   SunIcon,
   UserRoundIcon,
@@ -57,6 +61,7 @@ function HeaderMenu() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [anchorPosition, setAnchorPosition] = React.useState<MenuPosition | null>(null);
   const anchorRef = React.useRef<View>(null);
+  const supabase = React.useMemo(() => tryGetSupabaseClient(), []);
 
   const closeMenu = React.useCallback(() => {
     setIsOpen(false);
@@ -115,6 +120,39 @@ function HeaderMenu() {
     toggleColorScheme();
     closeMenu();
   }, [closeMenu, toggleColorScheme]);
+
+  const showSignOutError = React.useCallback((message: string) => {
+    const fallback = message.trim().length > 0 ? message : 'Could not sign out. Try again.';
+
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(fallback, ToastAndroid.SHORT);
+      return;
+    }
+
+    Alert.alert('Sign out failed', fallback);
+  }, []);
+
+  const handleSignOut = React.useCallback(async () => {
+    closeMenu();
+
+    const client = supabase ?? tryGetSupabaseClient();
+
+    if (!client) {
+      showSignOutError('Authentication is unavailable in this build.');
+      return;
+    }
+
+    try {
+      const { error } = await client.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      router.replace('/');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not sign out. Try again.';
+      showSignOutError(message);
+    }
+  }, [closeMenu, router, showSignOutError, supabase]);
 
   const menuPositionStyle = React.useMemo(() => {
     if (!anchorPosition) {
@@ -197,6 +235,17 @@ function HeaderMenu() {
                 <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-4" />
                 <Text className="text-sm font-medium">{themeLabel}</Text>
               </View>
+            </Pressable>
+
+            <View className="h-px bg-border" />
+
+            <Pressable
+              onPress={handleSignOut}
+              className="flex-row items-center gap-2 px-3 py-2 active:bg-accent"
+              accessibilityRole="button"
+            >
+              <Icon as={LogOutIcon} className="size-4" />
+              <Text className="text-sm font-medium">Sign out</Text>
             </Pressable>
           </View>
         </Portal>

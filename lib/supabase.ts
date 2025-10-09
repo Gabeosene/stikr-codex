@@ -227,15 +227,17 @@ if (process.env.NODE_ENV !== 'production' && !isServer) {
     void client
       .from('_fake')
       .select('*')
-      .then(({ data, error }) => {
-        console.info('[Supabase] Runtime connectivity check', {
-          ok: !error,
-          error: error?.message ?? null,
-          data,
-        });
-      })
-      .catch((error) => {
-        console.error('[Supabase] Runtime connectivity check failed', error);
-      });
+      .then(
+        ({ data, error }) => {
+          console.info('[Supabase] Runtime connectivity check', {
+            ok: !error,
+            error: error?.message ?? null,
+            data,
+          });
+        },
+        (err: unknown) => {
+          console.error('[Supabase] Runtime connectivity check failed', err);
+        }
+      );
   }
 }

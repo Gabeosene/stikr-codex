@@ -21,18 +21,22 @@ const BASE_HEADER_OPTIONS = {
   headerTransparent: true,
   headerShadowVisible: true,
   headerRight: () => <HeaderActions />,
-};
+} as const;
 
 const SCREEN_OPTIONS = {
   light: {
     ...BASE_HEADER_OPTIONS,
-    headerStyle: { backgroundColor: THEME.light.background },
+    headerStyle: {
+      backgroundColor: THEME.light.background,
+    },
   },
   dark: {
     ...BASE_HEADER_OPTIONS,
-    headerStyle: { backgroundColor: THEME.dark.background },
+    headerStyle: {
+      backgroundColor: THEME.dark.background,
+    },
   },
-};
+} as const;
 
 const GAP = 12;
 const COLS = 2;
@@ -180,9 +184,14 @@ function ThemeToggle() {
 
 function StickerArtwork({ uri, size }: { uri: string | null; size: number }) {
   const [failed, setFailed] = React.useState(false);
-  const cleanedUri = uri?.trim();
+  const cleanedUri = uri?.trim() ?? '';
+  const shouldShowPlaceholder = failed || cleanedUri.length === 0;
 
-  if (!cleanedUri || failed) {
+  React.useEffect(() => {
+    setFailed(false);
+  }, [cleanedUri]);
+
+  if (shouldShowPlaceholder) {
     return (
       <View
         style={{

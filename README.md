@@ -28,7 +28,7 @@ To run the development server:
     bun dev
 Node
 
-This repository pins a recommended Node version in `.nvmrc`. Use `nvm` or your system Node manager to switch to Node 18.18.0 before installing dependencies to avoid "unsupported engine" warnings from some packages:
+This repository pins a recommended Node version in `.nvmrc`. Use `nvm` or your system Node manager to switch to Node 20 before installing dependencies to avoid "unsupported engine" warnings from some packages:
 
 ```bash
 # if you use nvm

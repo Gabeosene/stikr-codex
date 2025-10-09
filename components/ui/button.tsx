@@ -91,9 +91,10 @@ const IOS_SHADOW: ViewStyle = {
   boxShadow: [
     {
       color: 'rgba(15, 23, 42, 0.12)',
-      offset: { width: 0, height: 1 },
+      offsetX: 0,
+      offsetY: 1,
       blurRadius: 2,
-      spreadRadius: 0,
+      spreadDistance: 0,
     },
   ],
 };
