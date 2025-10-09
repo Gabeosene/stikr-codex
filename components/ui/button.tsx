@@ -104,9 +104,30 @@ const VARIANTS_WITH_SHADOW = new Set(['default', 'destructive', 'outline', 'seco
 function Button({ className, variant, size, style, ...props }: ButtonProps) {
   const variantKey = variant ?? 'default';
   const shouldApplyWebShadow = Platform.OS === 'web' && VARIANTS_WITH_SHADOW.has(variantKey);
-  const resolvedStyle = shouldApplyWebShadow
-    ? ([{ boxShadow: WEB_SHADOW }, ...(style ? (Array.isArray(style) ? style : [style]) : [])] as ButtonProps['style'])
-    : style;
+  const webShadowStyle = { boxShadow: WEB_SHADOW } as const;
+
+  let resolvedStyle: ButtonProps['style'];
+
+  if (shouldApplyWebShadow) {
+    if (typeof style === 'function') {
+      resolvedStyle = ((state) => {
+        const resolved = style(state);
+
+        if (!resolved) {
+          return [webShadowStyle];
+        }
+
+        return Array.isArray(resolved)
+          ? [webShadowStyle, ...resolved]
+          : [webShadowStyle, resolved];
+      }) as ButtonProps['style'];
+    } else {
+      const normalizedStyle = style ? (Array.isArray(style) ? style : [style]) : [];
+      resolvedStyle = [webShadowStyle, ...normalizedStyle];
+    }
+  } else {
+    resolvedStyle = style;
+  }
 
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
