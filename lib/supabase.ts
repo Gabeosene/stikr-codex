@@ -9,52 +9,20 @@ type SupabaseGlobal = typeof globalThis & {
 
 const globalForSupabase = globalThis as SupabaseGlobal;
 
-const SUPABASE_URL_ENV_KEYS = [
-  'EXPO_PUBLIC_SUPABASE_URL',
-  'SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'PUBLIC_SUPABASE_URL',
-] as const;
+const SUPABASE_URL_ENV_KEY = 'EXPO_PUBLIC_SUPABASE_URL' as const;
+const SUPABASE_ANON_KEY_ENV_KEY = 'EXPO_PUBLIC_SUPABASE_ANON_KEY' as const;
 
-const SUPABASE_ANON_KEY_ENV_KEYS = [
-  'EXPO_PUBLIC_SUPABASE_ANON_KEY',
-  'SUPABASE_ANON_KEY',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'PUBLIC_SUPABASE_ANON_KEY',
-] as const;
-
-type EnvLookupResult = {
-  value: string;
-  source: (typeof SUPABASE_URL_ENV_KEYS)[number] | (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number] | null;
-};
-
-function pickEnvValue(keys: readonly string[]): EnvLookupResult {
-  for (const key of keys) {
-    const envKey = key as EnvLookupResult['source'];
-    const value = process.env[key];
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (trimmed) {
-        return { value: trimmed, source: envKey };
-      }
-    }
+function readEnv(key: string) {
+  const value = process.env[key];
+  if (typeof value !== 'string') {
+    return '';
   }
 
-  return { value: '', source: null };
+  return value.trim();
 }
 
-function formatEnvKeyList(keys: readonly string[]) {
-  if (keys.length === 0) return '';
-  if (keys.length === 1) return keys[0];
-  if (keys.length === 2) return `${keys[0]} or ${keys[1]}`;
-  return `${keys.slice(0, -1).join(', ')}, or ${keys[keys.length - 1]}`;
-}
-
-const urlEnv = pickEnvValue(SUPABASE_URL_ENV_KEYS);
-const keyEnv = pickEnvValue(SUPABASE_ANON_KEY_ENV_KEYS);
-
-const rawUrl = urlEnv.value;
-const rawKey = keyEnv.value;
+const rawUrl = readEnv(SUPABASE_URL_ENV_KEY);
+const rawKey = readEnv(SUPABASE_ANON_KEY_ENV_KEY);
 
 function isValidSupabaseUrl(value: string): boolean {
   if (!value) {
@@ -81,29 +49,21 @@ const configIssues: string[] = [];
 
 if (!rawUrl) {
   configIssues.push(
-    `Supabase URL is missing. Define ${formatEnvKeyList(
-      SUPABASE_URL_ENV_KEYS,
-    )} in your environment (for example, in .env).`,
+    `Supabase URL is missing. Define ${SUPABASE_URL_ENV_KEY} in your environment (for example, in .env).`,
   );
 } else if (!isValidSupabaseUrl(rawUrl)) {
   configIssues.push(
-    `Supabase URL from ${
-      urlEnv.source ?? SUPABASE_URL_ENV_KEYS[0]
-    } looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co or http://127.0.0.1:54321 when using supabase start.`
+    `Supabase URL from ${SUPABASE_URL_ENV_KEY} looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co or http://127.0.0.1:54321 when using supabase start.`,
   );
 }
 
 if (!rawKey) {
   configIssues.push(
-    `Supabase anon key is missing. Define ${formatEnvKeyList(
-      SUPABASE_ANON_KEY_ENV_KEYS,
-    )} in your environment (for example, in .env).`
+    `Supabase anon key is missing. Define ${SUPABASE_ANON_KEY_ENV_KEY} in your environment (for example, in .env).`
   );
 } else if (!rawKey.startsWith('eyJ')) {
   configIssues.push(
-    `Supabase anon key from ${
-      keyEnv.source ?? SUPABASE_ANON_KEY_ENV_KEYS[0]
-    } looks malformed (prefix "${rawKey.slice(0, 8)}").`
+    `Supabase anon key from ${SUPABASE_ANON_KEY_ENV_KEY} looks malformed (prefix "${rawKey.slice(0, 8)}").`
   );
 }
 
@@ -111,7 +71,11 @@ const configurationError =
   configIssues.length > 0 ? new Error(`[Supabase] ${configIssues.join(' ')}`) : null;
 
 if (configurationError && process.env.NODE_ENV !== 'production') {
-  console.warn(configurationError.message);
+  if (!rawUrl || !rawKey) {
+    console.warn('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL/ANON_KEY');
+  } else {
+    console.warn(configurationError.message);
+  }
 }
 
 const isServer = typeof window === 'undefined';
@@ -224,3 +188,22 @@ export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
 });
 
 export default supabase;
+
+if (process.env.NODE_ENV !== 'production' && !isServer) {
+  const client = tryGetSupabaseClient();
+  if (client) {
+    void client
+      .from('_fake')
+      .select('*')
+      .then(({ data, error }) => {
+        console.info('[Supabase] Runtime connectivity check', {
+          ok: !error,
+          error: error?.message ?? null,
+          data,
+        });
+      })
+      .catch((error) => {
+        console.error('[Supabase] Runtime connectivity check failed', error);
+      });
+  }
+}
