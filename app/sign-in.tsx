@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
-import { getSupabaseClient, getSupabaseConfigurationError } from '@/lib/supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from '@/lib/supabase';
 
 const MODES = [
   { id: 'magic-link', label: 'Magic link' },
@@ -31,13 +31,9 @@ export default function SignInScreen() {
   const supabaseConfigError = getSupabaseConfigurationError();
   const supabase = React.useMemo(() => {
     if (supabaseConfigError) return null;
-    try {
-      return getSupabaseClient();
-    } catch (err) {
-      console.warn(err);
-      return null;
-    }
+    return tryGetSupabaseClient();
   }, [supabaseConfigError]);
+  const supabaseUnavailable = supabaseConfigError != null || supabase == null;
 
   const [mode, setMode] = React.useState<SignInMode>('magic-link');
   const [email, setEmail] = React.useState('');
@@ -72,8 +68,10 @@ export default function SignInScreen() {
     setError(null);
 
     try {
-      if (!supabase) {
-        throw supabaseConfigError ?? new Error('Supabase is not configured.');
+      if (supabaseUnavailable || !supabase) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        setError('Authentication is disabled in this preview build.');
+        return;
       }
 
       if (mode === 'magic-link') {
@@ -119,6 +117,7 @@ export default function SignInScreen() {
     showToast,
     supabase,
     supabaseConfigError,
+    supabaseUnavailable,
     trimmedEmail,
     trimmedPassword,
   ]);
@@ -159,6 +158,27 @@ export default function SignInScreen() {
               </CardHeader>
 
               <CardContent className="gap-6 pb-6">
+                {supabaseUnavailable ? (
+                  <View
+                    style={{
+                      paddingVertical: 12,
+                      paddingHorizontal: 14,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: '#93c5fd',
+                      backgroundColor: colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#dbeafe',
+                    }}
+                  >
+                    <Text className="font-semibold text-foreground">Demo only</Text>
+                    <Text className="text-muted-foreground mt-1">
+                      Supabase credentials are not configured, so this form is disabled in this build.
+                    </Text>
+                    {supabaseConfigError ? (
+                      <Text className="text-muted-foreground mt-2 text-xs">{supabaseConfigError.message}</Text>
+                    ) : null}
+                  </View>
+                ) : null}
+
                 <View className="flex-row gap-2">
                   {MODES.map((item) => {
                     const isActive = item.id === mode;
@@ -168,7 +188,7 @@ export default function SignInScreen() {
                         variant={isActive ? 'default' : 'outline'}
                         size="sm"
                         className="flex-1"
-                        disabled={loading}
+                        disabled={loading || supabaseUnavailable}
                         onPress={() => setMode(item.id)}
                       >
                         <Text className="text-center text-sm font-medium">{item.label}</Text>
@@ -181,7 +201,7 @@ export default function SignInScreen() {
                   <Text className="text-sm font-medium text-foreground">Email</Text>
                   <Input
                     value={email}
-                    editable={!loading}
+                    editable={!loading && !supabaseUnavailable}
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -198,7 +218,7 @@ export default function SignInScreen() {
                     <Text className="text-sm font-medium text-foreground">Password</Text>
                     <Input
                       value={password}
-                      editable={!loading}
+                      editable={!loading && !supabaseUnavailable}
                       onChangeText={setPassword}
                       secureTextEntry
                       autoCapitalize="none"
@@ -226,7 +246,7 @@ export default function SignInScreen() {
 
                 <Button
                   className="h-11"
-                  disabled={!canSubmit || loading}
+                  disabled={!canSubmit || loading || supabaseUnavailable}
                   onPress={handleSubmit}
                 >
                   {loading ? (

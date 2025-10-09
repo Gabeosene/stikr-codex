@@ -136,23 +136,16 @@ function HeaderMenu() {
       return { boxShadow: '0px 12px 20px rgba(15, 23, 42, 0.15)' } as const;
     }
 
-    return (
-      Platform.select({
-        ios: {
-          shadowColor: '#000',
-          shadowOpacity: 0.15,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 12 },
-        },
-        android: { elevation: 12 },
-        default: {
-          shadowColor: 'rgba(15, 23, 42, 0.15)',
-          shadowOpacity: 1,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 12 },
-        },
-      }) ?? {}
-    );
+    if (Platform.OS === 'android') {
+      return { elevation: 12 } as const;
+    }
+
+    return {
+      shadowColor: '#000',
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 12 },
+    } as const;
   }, []);
 
   const themeLabel = colorScheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';

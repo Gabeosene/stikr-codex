@@ -1,15 +1,23 @@
 import { Text, TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { View, type ViewProps } from 'react-native';
+import { Platform, View, type ViewProps } from 'react-native';
 
-function Card({ className, ...props }: ViewProps & React.RefAttributes<View>) {
+function Card({ className, style, ...props }: ViewProps & React.RefAttributes<View>) {
+  const nativeShadowClass = Platform.select({ web: '', default: 'shadow-sm shadow-black/5' });
+  const webShadowStyle = Platform.OS === 'web' ? { boxShadow: '0px 8px 24px rgba(15, 23, 42, 0.08)' } : null;
+  const resolvedStyle = webShadowStyle
+    ? ([webShadowStyle, ...(style ? (Array.isArray(style) ? style : [style]) : [])] as ViewProps['style'])
+    : style;
+
   return (
     <TextClassContext.Provider value="text-card-foreground">
       <View
         className={cn(
-          'bg-card border-border flex flex-col gap-6 rounded-xl border py-6 shadow-sm shadow-black/5',
+          'bg-card border-border flex flex-col gap-6 rounded-xl border py-6',
+          nativeShadowClass,
           className
         )}
+        style={resolvedStyle}
         {...props}
       />
     </TextClassContext.Provider>

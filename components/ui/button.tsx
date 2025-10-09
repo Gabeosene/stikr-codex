@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 
+const nativeShadowClass = Platform.select({ web: '', default: 'shadow-sm shadow-black/5' });
+
 const buttonVariants = cva(
   cn(
     'group shrink-0 flex-row items-center justify-center gap-2 rounded-md shadow-none',
@@ -14,23 +16,27 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: cn(
-          'bg-primary active:bg-primary/90 shadow-sm shadow-black/5',
+          nativeShadowClass,
+          'bg-primary active:bg-primary/90',
           Platform.select({ web: 'hover:bg-primary/90' })
         ),
         destructive: cn(
-          'bg-destructive active:bg-destructive/90 dark:bg-destructive/60 shadow-sm shadow-black/5',
+          nativeShadowClass,
+          'bg-destructive active:bg-destructive/90 dark:bg-destructive/60',
           Platform.select({
             web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
           })
         ),
         outline: cn(
-          'border-border bg-background active:bg-accent dark:bg-input/30 dark:border-input dark:active:bg-input/50 border shadow-sm shadow-black/5',
+          nativeShadowClass,
+          'border-border bg-background active:bg-accent dark:bg-input/30 dark:border-input dark:active:bg-input/50 border',
           Platform.select({
             web: 'hover:bg-accent dark:hover:bg-input/50',
           })
         ),
         secondary: cn(
-          'bg-secondary active:bg-secondary/80 shadow-sm shadow-black/5',
+          nativeShadowClass,
+          'bg-secondary active:bg-secondary/80',
           Platform.select({ web: 'hover:bg-secondary/80' })
         ),
         ghost: cn(
@@ -92,12 +98,22 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   React.RefAttributes<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
-function Button({ className, variant, size, ...props }: ButtonProps) {
+const WEB_SHADOW = '0px 1px 2px rgba(15, 23, 42, 0.12)';
+const VARIANTS_WITH_SHADOW = new Set(['default', 'destructive', 'outline', 'secondary']);
+
+function Button({ className, variant, size, style, ...props }: ButtonProps) {
+  const variantKey = variant ?? 'default';
+  const shouldApplyWebShadow = Platform.OS === 'web' && VARIANTS_WITH_SHADOW.has(variantKey);
+  const resolvedStyle = shouldApplyWebShadow
+    ? ([{ boxShadow: WEB_SHADOW }, ...(style ? (Array.isArray(style) ? style : [style]) : [])] as ButtonProps['style'])
+    : style;
+
   return (
     <TextClassContext.Provider value={buttonTextVariants({ variant, size })}>
       <Pressable
         className={cn(props.disabled && 'opacity-50', buttonVariants({ variant, size }), className)}
         role="button"
+        style={resolvedStyle}
         {...props}
       />
     </TextClassContext.Provider>

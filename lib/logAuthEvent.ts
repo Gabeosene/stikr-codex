@@ -1,5 +1,5 @@
 // src/lib/logAuthEvent.ts
-import { getSupabaseClient, getSupabaseConfigurationError } from './supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from './supabase';
 
 export async function logAuthEvent(input: {
   type: 'user.signed_in' | 'user.signed_out';
@@ -20,7 +20,11 @@ export async function logAuthEvent(input: {
     return;
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = tryGetSupabaseClient();
+  if (!supabase) {
+    console.warn('logAuthEvent skipped: Supabase client unavailable');
+    return;
+  }
   const { error } = await supabase.functions.invoke('log-event', { body: input });
   if (error) console.warn('logAuthEvent failed:', error);
 }

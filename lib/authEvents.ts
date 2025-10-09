@@ -6,7 +6,7 @@ import 'react-native-get-random-values'
 import { v4 as uuid } from 'uuid'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { getSupabaseClient, getSupabaseConfigurationError } from './supabase'
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from './supabase'
 
 const DEVICE_KEY = 'stikr_device_id'
 
@@ -74,11 +74,9 @@ export async function wireAuthEvents() {
     return
   }
 
-  let client: SupabaseClient
-  try {
-    client = getSupabaseClient()
-  } catch (error) {
-    console.warn('[authEvents] unable to create Supabase client', error)
+  const client = tryGetSupabaseClient()
+  if (!client) {
+    console.warn('[authEvents] unable to create Supabase client')
     return
   }
 

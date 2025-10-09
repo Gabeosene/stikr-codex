@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
-import { getSupabaseClient, getSupabaseConfigurationError } from '@/lib/supabase';
+import { getSupabaseConfigurationError, tryGetSupabaseClient } from '@/lib/supabase';
 
 const HEADER_OPTIONS = {
   light: {
@@ -41,7 +41,7 @@ export default function AuthScreen() {
   const supabaseConfigError = getSupabaseConfigurationError();
   const supabase = React.useMemo(() => {
     if (supabaseConfigError) return null;
-    return getSupabaseClient();
+    return tryGetSupabaseClient();
   }, [supabaseConfigError]);
 
   const [mode, setMode] = React.useState<Mode>('sign-in');
