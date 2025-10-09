@@ -1,41 +1,29 @@
 import { TextClassContext } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Platform, Pressable } from 'react-native';
-
-const nativeShadowClass = Platform.select({ web: '', default: 'shadow-sm shadow-black/5' });
+import { Platform, Pressable, type ViewStyle } from 'react-native';
 
 const buttonVariants = cva(
   cn(
-    'group shrink-0 flex-row items-center justify-center gap-2 rounded-md shadow-none',
+    'group shrink-0 flex-row items-center justify-center gap-2 rounded-md',
     Platform.select({
-      web: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap outline-none transition-all focus-visible:ring-[3px] disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      web: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap outline-none transition-all focus-visible:ring-[3px] [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
     })
   ),
   {
     variants: {
       variant: {
-        default: cn(
-          nativeShadowClass,
-          'bg-primary active:bg-primary/90',
-          Platform.select({ web: 'hover:bg-primary/90' })
-        ),
-        destructive: cn(
-          nativeShadowClass,
-          'bg-destructive active:bg-destructive/90 dark:bg-destructive/60',
-          Platform.select({
-            web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
-          })
-        ),
+        default: cn('bg-primary active:bg-primary/90', Platform.select({ web: 'hover:bg-primary/90' })),
+        destructive: cn('bg-destructive active:bg-destructive/90 dark:bg-destructive/60', Platform.select({
+          web: 'hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+        })),
         outline: cn(
-          nativeShadowClass,
           'border-border bg-background active:bg-accent dark:bg-input/30 dark:border-input dark:active:bg-input/50 border',
           Platform.select({
             web: 'hover:bg-accent dark:hover:bg-input/50',
           })
         ),
         secondary: cn(
-          nativeShadowClass,
           'bg-secondary active:bg-secondary/80',
           Platform.select({ web: 'hover:bg-secondary/80' })
         ),
@@ -62,7 +50,7 @@ const buttonVariants = cva(
 const buttonTextVariants = cva(
   cn(
     'text-foreground text-sm font-medium',
-    Platform.select({ web: 'pointer-events-none transition-colors' })
+    Platform.select({ web: 'transition-colors' })
   ),
   {
     variants: {
@@ -99,31 +87,51 @@ type ButtonProps = React.ComponentProps<typeof Pressable> &
   VariantProps<typeof buttonVariants>;
 
 const WEB_SHADOW = '0px 1px 2px rgba(15, 23, 42, 0.12)';
+const IOS_SHADOW: ViewStyle = {
+  boxShadow: [
+    {
+      color: 'rgba(15, 23, 42, 0.12)',
+      offset: { width: 0, height: 1 },
+      blurRadius: 2,
+      spreadRadius: 0,
+    },
+  ],
+};
 const VARIANTS_WITH_SHADOW = new Set(['default', 'destructive', 'outline', 'secondary']);
 
 function Button({ className, variant, size, style, ...props }: ButtonProps) {
   const variantKey = variant ?? 'default';
-  const shouldApplyWebShadow = Platform.OS === 'web' && VARIANTS_WITH_SHADOW.has(variantKey);
-  const webShadowStyle = { boxShadow: WEB_SHADOW } as const;
+  const shouldApplyShadow = VARIANTS_WITH_SHADOW.has(variantKey);
+
+  let shadowStyle: ViewStyle | null = null;
+  if (shouldApplyShadow) {
+    if (Platform.OS === 'web') {
+      shadowStyle = { boxShadow: WEB_SHADOW };
+    } else if (Platform.OS === 'android') {
+      shadowStyle = { elevation: 2 };
+    } else {
+      shadowStyle = IOS_SHADOW;
+    }
+  }
 
   let resolvedStyle: ButtonProps['style'];
 
-  if (shouldApplyWebShadow) {
+  if (shadowStyle) {
     if (typeof style === 'function') {
       resolvedStyle = ((state) => {
         const resolved = style(state);
 
         if (!resolved) {
-          return [webShadowStyle];
+          return [shadowStyle as ViewStyle];
         }
 
         return Array.isArray(resolved)
-          ? [webShadowStyle, ...resolved]
-          : [webShadowStyle, resolved];
+          ? [shadowStyle as ViewStyle, ...resolved]
+          : [shadowStyle as ViewStyle, resolved];
       }) as ButtonProps['style'];
     } else {
       const normalizedStyle = style ? (Array.isArray(style) ? style : [style]) : [];
-      resolvedStyle = [webShadowStyle, ...normalizedStyle];
+      resolvedStyle = [shadowStyle, ...normalizedStyle];
     }
   } else {
     resolvedStyle = style;

@@ -3,26 +3,58 @@ import 'react-native-url-polyfill/auto';
 import { Platform } from 'react-native';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+const SUPABASE_URL_ENV_KEYS = ['EXPO_PUBLIC_SUPABASE_URL', 'SUPABASE_URL'] as const;
+const SUPABASE_ANON_KEY_ENV_KEYS = [
+  'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+  'SUPABASE_ANON_KEY',
+] as const;
+
+type SupabaseUrlEnvKey = (typeof SUPABASE_URL_ENV_KEYS)[number];
+type SupabaseAnonEnvKey = (typeof SUPABASE_ANON_KEY_ENV_KEYS)[number];
+type SupabaseEnvKey = SupabaseUrlEnvKey | SupabaseAnonEnvKey;
+
 type SupabaseGlobal = typeof globalThis & {
   __supabaseClient?: SupabaseClient | null;
+  expo?: {
+    env?: Partial<Record<SupabaseEnvKey, string | undefined>>;
+  };
 };
 
 const globalForSupabase = globalThis as SupabaseGlobal;
 
-const SUPABASE_URL_ENV_KEY = 'EXPO_PUBLIC_SUPABASE_URL' as const;
-const SUPABASE_ANON_KEY_ENV_KEY = 'EXPO_PUBLIC_SUPABASE_ANON_KEY' as const;
+type EnvResolution = {
+  value: string;
+  key?: SupabaseEnvKey;
+};
 
-function readEnv(key: string) {
-  const value = process.env[key];
-  if (typeof value !== 'string') {
-    return '';
+function resolveEnvValue(keys: readonly SupabaseEnvKey[]): EnvResolution {
+  if (typeof process !== 'undefined' && typeof process.env !== 'undefined') {
+    for (const key of keys) {
+      const candidate = process.env[key];
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return { value: candidate.trim(), key };
+      }
+    }
   }
 
-  return value.trim();
+  const expoEnv = globalForSupabase.expo?.env;
+  if (expoEnv) {
+    for (const key of keys) {
+      const candidate = expoEnv[key];
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return { value: candidate.trim(), key };
+      }
+    }
+  }
+
+  return { value: '', key: undefined };
 }
 
-const rawUrl = readEnv(SUPABASE_URL_ENV_KEY);
-const rawKey = readEnv(SUPABASE_ANON_KEY_ENV_KEY);
+const resolvedUrl = resolveEnvValue(SUPABASE_URL_ENV_KEYS);
+const resolvedKey = resolveEnvValue(SUPABASE_ANON_KEY_ENV_KEYS);
+
+const rawUrl = resolvedUrl.value;
+const rawKey = resolvedKey.value;
 
 function isValidSupabaseUrl(value: string): boolean {
   if (!value) {
@@ -46,24 +78,28 @@ function isValidSupabaseUrl(value: string): boolean {
 }
 
 const configIssues: string[] = [];
+const urlEnvSuggestion = SUPABASE_URL_ENV_KEYS.join(' or ');
+const anonEnvSuggestion = SUPABASE_ANON_KEY_ENV_KEYS.join(' or ');
 
 if (!rawUrl) {
   configIssues.push(
-    `Supabase URL is missing. Define ${SUPABASE_URL_ENV_KEY} in your environment (for example, in .env).`,
+    `Supabase URL is missing. Define ${urlEnvSuggestion} in your environment (for example, in .env).`
   );
 } else if (!isValidSupabaseUrl(rawUrl)) {
+  const urlKeyLabel = resolvedUrl.key ?? SUPABASE_URL_ENV_KEYS[0];
   configIssues.push(
-    `Supabase URL from ${SUPABASE_URL_ENV_KEY} looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co or http://127.0.0.1:54321 when using supabase start.`,
+    `Supabase URL from ${urlKeyLabel} looks malformed (received "${rawUrl}"). It should match https://xxxx.supabase.co or http://127.0.0.1:54321 when using supabase start.`
   );
 }
 
 if (!rawKey) {
   configIssues.push(
-    `Supabase anon key is missing. Define ${SUPABASE_ANON_KEY_ENV_KEY} in your environment (for example, in .env).`
+    `Supabase anon key is missing. Define ${anonEnvSuggestion} in your environment (for example, in .env).`
   );
 } else if (!rawKey.startsWith('eyJ')) {
+  const anonKeyLabel = resolvedKey.key ?? SUPABASE_ANON_KEY_ENV_KEYS[0];
   configIssues.push(
-    `Supabase anon key from ${SUPABASE_ANON_KEY_ENV_KEY} looks malformed (prefix "${rawKey.slice(0, 8)}").`
+    `Supabase anon key from ${anonKeyLabel} looks malformed (prefix "${rawKey.slice(0, 8)}").`
   );
 }
 
@@ -71,11 +107,7 @@ const configurationError =
   configIssues.length > 0 ? new Error(`[Supabase] ${configIssues.join(' ')}`) : null;
 
 if (configurationError && process.env.NODE_ENV !== 'production') {
-  if (!rawUrl || !rawKey) {
-    console.warn('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL/ANON_KEY');
-  } else {
-    console.warn(configurationError.message);
-  }
+  console.warn(configurationError.message);
 }
 
 const isServer = typeof window === 'undefined';
