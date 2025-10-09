@@ -1,6 +1,11 @@
 {
   "name": "Node.js Dev Container",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:0-18",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "VARIANT": "20-bullseye"
+    }
+  },
   "postCreateCommand": "corepack enable && npm install",
   "postAttachCommand": "npm run web",
   "forwardPorts": [19006],
